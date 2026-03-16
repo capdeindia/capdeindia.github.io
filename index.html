@@ -508,16 +508,82 @@
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
 
+    /* HAMBURGER */
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 4px; z-index: 60;
+    }
+    .hamburger span {
+      display: block; width: 24px; height: 2px;
+      background: var(--text); border-radius: 2px;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* MOBILE MENU OVERLAY */
+    .mobile-menu {
+      display: none; position: fixed; inset: 0; z-index: 55;
+      background: rgba(8,8,8,0.98); backdrop-filter: blur(16px);
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 2rem;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-display); font-size: 3rem;
+      color: var(--text); text-decoration: none; letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--accent); }
+    .mobile-menu .nav-cta {
+      font-family: var(--font-ui); font-size: 1rem;
+      background: var(--accent); color: #fff !important;
+      padding: 12px 32px; border-radius: 2px; margin-top: 1rem;
+    }
+
     /* MOBILE */
     @media (max-width: 768px) {
+      body { cursor: auto; }
+      #cursor { display: none; }
+
       nav { padding: 1rem 1.5rem; }
       .nav-links { display: none; }
-      #hero { padding: 0 1.5rem 4rem; }
-      section { padding: 5rem 1.5rem; }
-      .about-grid, .turbo-inner, .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .hamburger { display: flex; }
+
+      #hero {
+        padding: 0 1.5rem 4rem;
+        min-height: 100svh;
+        justify-content: flex-end;
+        padding-bottom: 3rem;
+      }
+      .hero-title-wrap { padding-top: 5.5rem; }
+      .hero-title { font-size: clamp(3.8rem, 18vw, 7rem); }
+      .hero-eyebrow { font-size: 10px; letter-spacing: 0.2em; }
+      .hero-sub { flex-direction: column; align-items: flex-start; gap: 1rem; margin-top: 1.5rem; }
+      .hero-desc { font-size: 14px; max-width: 100%; }
       .hero-stats { display: none; }
-      footer { flex-direction: column; gap: 1rem; text-align: center; }
-      .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+
+      section { padding: 4rem 1.5rem; }
+      .about-grid, .turbo-inner, .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .about-right { grid-template-columns: 1fr 1fr; }
+      .turbo-visual { font-size: 12px; padding: 1.5rem; }
+      .contact-big { font-size: clamp(2.8rem, 10vw, 5rem); }
+
+      .section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .section-num { font-size: 3rem; }
+      .section-title { font-size: clamp(2.2rem, 10vw, 3.5rem); }
+
+      .games-grid { grid-template-columns: 1fr; }
+
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 1.5rem; }
+
+      .ticker span { font-size: 0.9rem; padding: 0 1rem; }
+    }
+
+    @media (max-width: 400px) {
+      .hero-title { font-size: clamp(3rem, 20vw, 5rem); }
+      nav { padding: 1rem; }
     }
   </style>
 </head>
@@ -537,7 +603,18 @@
       <a href="#turbostrap">TurboStrap</a>
       <a href="#contact" class="nav-cta">Contact</a>
     </div>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#games" onclick="closeMenu()">Games</a>
+    <a href="#about" onclick="closeMenu()">About</a>
+    <a href="#turbostrap" onclick="closeMenu()">TurboStrap</a>
+    <a href="#contact" class="nav-cta" onclick="closeMenu()">Contact</a>
+  </div>
 
   <!-- HERO -->
   <section id="hero">
@@ -806,6 +883,20 @@
   </footer>
 
   <script>
+    // Mobile menu
+    function toggleMenu() {
+      const menu = document.getElementById('mobile-menu');
+      const btn  = document.getElementById('hamburger');
+      menu.classList.toggle('open');
+      btn.classList.toggle('open');
+      document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+    }
+    function closeMenu() {
+      document.getElementById('mobile-menu').classList.remove('open');
+      document.getElementById('hamburger').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
     // Cursor
     const cursor = document.getElementById('cursor');
     document.addEventListener('mousemove', e => {
