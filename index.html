@@ -99,9 +99,13 @@
     /* HERO */
     #hero {
       min-height: 100vh;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      padding: 0 3rem 5rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 7rem 3rem 5rem;
       position: relative; overflow: hidden;
+    }
+
+    .hero-title-wrap {
+      position: relative; z-index: 1;
     }
 
     .hero-bg {
@@ -539,12 +543,14 @@
   <section id="hero">
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
-    <div class="hero-eyebrow">Capde Entertainment — Est. 2024</div>
-    <h1 class="hero-title">
-      <span class="outline">WE</span><br>
-      <span class="filled">BUILD</span><br>
-      <span class="outline">WORLDS</span>
-    </h1>
+    <div class="hero-title-wrap">
+      <div class="hero-eyebrow">Capde Entertainment — Est. 2024</div>
+      <h1 class="hero-title">
+        <span class="outline">WE</span><br>
+        <span class="filled">BUILD</span><br>
+        <span class="outline">WORLDS</span>
+      </h1>
+    </div>
     <div class="hero-sub">
       <p class="hero-desc">From Roblox to PC — we craft bold, immersive game experiences that push the limits of what's possible.</p>
       <div class="hero-stats">
