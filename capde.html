@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capde — Game Development Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080808;
+      --surface: #0f0f0f;
+      --surface2: #161616;
+      --border: #2a2a2a;
+      --accent: #ff3c00;
+      --accent2: #ff7a00;
+      --text: #f5f5f5;
+      --muted: #777;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'Barlow', sans-serif;
+      --font-ui: 'Barlow Condensed', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* CUSTOM CURSOR */
+    #cursor {
+      position: fixed; width: 12px; height: 12px;
+      background: var(--accent); border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s, width 0.2s, height 0.2s, background 0.2s;
+      mix-blend-mode: difference;
+    }
+    #cursor.hover { width: 36px; height: 36px; }
+
+    /* NOISE OVERLAY */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 150px;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 3rem;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    nav.scrolled { background: rgba(8,8,8,0.95); border-color: var(--border); backdrop-filter: blur(12px); }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .nav-logo .ce-mark {
+      width: 36px; height: 36px;
+      border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-family: var(--font-display);
+      color: var(--accent); letter-spacing: 0;
+    }
+
+    .nav-links { display: flex; gap: 2.5rem; align-items: center; }
+    .nav-links a {
+      font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      font-family: var(--font-ui); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      background: var(--accent); color: #fff !important;
+      padding: 8px 20px; border-radius: 2px;
+      transition: background 0.2s !important;
+    }
+    .nav-cta:hover { background: var(--accent2) !important; color: #fff !important; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0 3rem 5rem;
+      position: relative; overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% 40%, rgba(255,60,0,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 80% at 10% 90%, rgba(255,122,0,0.06) 0%, transparent 50%),
+        #080808;
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0; opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(255,60,0,0.8) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,60,0,0.8) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    .hero-eyebrow {
+      position: relative; z-index: 1;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent);
+      margin-bottom: 1rem;
+      opacity: 0; animation: slideUp 0.6s 0.2s ease forwards;
+    }
+
+    .hero-title {
+      position: relative; z-index: 1;
+      font-family: var(--font-display);
+      font-size: clamp(5rem, 15vw, 14rem);
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      opacity: 0; animation: slideUp 0.7s 0.35s ease forwards;
+    }
+
+    .hero-title .outline {
+      -webkit-text-stroke: 2px var(--text);
+      color: transparent;
+    }
+
+    .hero-title .filled { color: var(--text); }
+
+    .hero-sub {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 2rem;
+      opacity: 0; animation: slideUp 0.7s 0.5s ease forwards;
+    }
+
+    .hero-desc {
+      font-size: 16px; color: var(--muted); line-height: 1.6;
+      max-width: 420px; font-style: italic;
+    }
+
+    .hero-stats {
+      display: flex; gap: 3rem;
+    }
+
+    .stat { text-align: right; }
+    .stat-num { font-family: var(--font-display); font-size: 3rem; color: var(--accent); line-height: 1; }
+    .stat-label { font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+    .scroll-hint {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); animation: bounce 2s infinite;
+    }
+
+    .scroll-hint::after {
+      content: ''; width: 1px; height: 40px; background: linear-gradient(var(--accent), transparent);
+    }
+
+    @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
+
+    /* TICKER */
+    .ticker-wrap {
+      background: var(--accent); padding: 10px 0; overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .ticker {
+      display: flex; gap: 0;
+      animation: ticker 20s linear infinite;
+      white-space: nowrap;
+    }
+
+    .ticker span {
+      font-family: var(--font-display); font-size: 1.1rem;
+      letter-spacing: 0.1em; color: #fff; padding: 0 2rem;
+    }
+
+    .ticker-dot { color: rgba(255,255,255,0.4); }
+
+    @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    /* SECTIONS */
+    section { padding: 7rem 3rem; }
+
+    .section-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 4rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;
+    }
+
+    .section-num {
+      font-family: var(--font-display); font-size: 5rem; color: var(--border);
+      line-height: 1; margin-right: 1rem; user-select: none;
+    }
+
+    .section-title-group { display: flex; align-items: flex-end; gap: 1rem; }
+
+    .section-title {
+      font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5rem);
+      line-height: 1; color: var(--text);
+    }
+
+    .section-tag {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent);
+      border: 1px solid var(--accent); padding: 4px 12px; margin-bottom: 8px;
+    }
+
+    /* GAMES */
+    #games { background: var(--bg); }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2px;
+    }
+
+    .game-card {
+      position: relative; overflow: hidden;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      transition: border-color 0.3s;
+      group: true;
+    }
+
+    .game-card:hover { border-color: var(--accent); }
+    .game-card:hover .game-overlay { opacity: 1; }
+    .game-card:hover .game-thumb-inner { transform: scale(1.05); }
+
+    .game-thumb {
+      width: 100%; aspect-ratio: 16/9; overflow: hidden;
+      position: relative;
+    }
+
+    .game-thumb-inner {
+      width: 100%; height: 100%;
+      transition: transform 0.5s ease;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 5rem; letter-spacing: 0.05em;
+    }
+
+    .game-thumb-inner.chaos {
+      background: linear-gradient(135deg, #1a0500 0%, #3d0f00 40%, #ff3c00 100%);
+      color: rgba(255,255,255,0.15);
+    }
+
+    .game-thumb-inner.heaven {
+      background: linear-gradient(135deg, #000510 0%, #001a3d 40%, #0066ff 100%);
+      color: rgba(255,255,255,0.15);
+    }
+
+    .game-thumb-inner.progress {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      color: rgba(255,255,255,0.08);
+    }
+
+    .game-thumb-inner.turbo {
+      background: linear-gradient(135deg, #000a05 0%, #003319 40%, #00cc44 100%);
+      color: rgba(255,255,255,0.15);
+    }
+
+    .game-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,60,0,0.08);
+      opacity: 0; transition: opacity 0.3s;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .play-btn {
+      width: 56px; height: 56px; background: var(--accent);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; transform: scale(0.8); transition: transform 0.2s;
+    }
+
+    .game-card:hover .play-btn { transform: scale(1); }
+
+    .game-info { padding: 1.5rem; }
+
+    .game-platform {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.5rem;
+    }
+
+    .game-name {
+      font-family: var(--font-display); font-size: 2rem;
+      line-height: 1; margin-bottom: 0.75rem; color: var(--text);
+    }
+
+    .game-desc {
+      font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem;
+    }
+
+    .game-footer {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .game-status {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 2px;
+    }
+
+    .status-live { background: rgba(0,200,80,0.15); color: #00c850; border: 1px solid rgba(0,200,80,0.3); }
+    .status-wip { background: rgba(255,170,0,0.12); color: #ffaa00; border: 1px solid rgba(255,170,0,0.25); }
+    .status-banned { background: rgba(255,60,0,0.12); color: var(--accent); border: 1px solid rgba(255,60,0,0.25); }
+    .status-soon { background: rgba(120,120,120,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+    .game-link {
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+
+    .game-link:hover { color: var(--accent); }
+    .game-link::after { content: '↗'; font-size: 14px; }
+
+    /* ABOUT */
+    #about { background: var(--surface); }
+
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center;
+    }
+
+    .about-left {}
+
+    .about-big {
+      font-family: var(--font-display); font-size: clamp(4rem, 8vw, 8rem);
+      line-height: 0.9; margin-bottom: 2rem;
+    }
+
+    .about-big .red { color: var(--accent); }
+
+    .about-body {
+      font-size: 16px; color: var(--muted); line-height: 1.8; margin-bottom: 2rem;
+    }
+
+    .about-tags {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .tag {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      border: 1px solid var(--border); padding: 6px 14px; color: var(--muted);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .tag:hover { border-color: var(--accent); color: var(--text); }
+
+    .about-right {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    }
+
+    .about-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+    }
+
+    .about-card-num {
+      font-family: var(--font-display); font-size: 3.5rem; color: var(--accent); line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .about-card-label {
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
+    }
+
+    /* TURBOSTRAP */
+    #turbostrap {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .turbo-inner {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 5rem; align-items: center;
+    }
+
+    .turbo-visual {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 2.5rem; font-family: monospace; font-size: 13px;
+      color: #00c850; line-height: 1.8; position: relative; overflow: hidden;
+    }
+
+    .turbo-visual::before {
+      content: 'TURBOSTRAP v1.0';
+      display: block; font-family: var(--font-ui); font-size: 10px;
+      letter-spacing: 0.2em; color: var(--muted); margin-bottom: 1rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+
+    .turbo-visual .dim { color: #444; }
+    .turbo-visual .acc { color: var(--accent); }
+    .turbo-visual .blue { color: #4da6ff; }
+
+    .turbo-content {}
+
+    .turbo-title {
+      font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95; margin-bottom: 1.5rem;
+    }
+
+    .turbo-title span { color: var(--accent); }
+
+    .turbo-body { font-size: 16px; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; }
+
+    .turbo-features {
+      display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem;
+    }
+
+    .feature-row {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+      letter-spacing: 0.05em; color: var(--text);
+    }
+
+    .feature-row::before {
+      content: ''; width: 20px; height: 2px; background: var(--accent); flex-shrink: 0;
+    }
+
+    .turbo-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      background: var(--accent); color: #fff; padding: 14px 28px;
+      text-decoration: none; border-radius: 2px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .turbo-btn:hover { background: var(--accent2); transform: translateY(-2px); }
+
+    /* CONTACT */
+    #contact { background: var(--surface); }
+
+    .contact-grid {
+      display: grid; grid-template-columns: 1.5fr 1fr; gap: 5rem; align-items: start;
+    }
+
+    .contact-big {
+      font-family: var(--font-display); font-size: clamp(3.5rem, 7vw, 7rem);
+      line-height: 0.9; margin-bottom: 2rem;
+    }
+
+    .contact-big em { font-style: normal; color: var(--accent); }
+
+    .contact-body { font-size: 16px; color: var(--muted); line-height: 1.8; }
+
+    .contact-links { display: flex; flex-direction: column; gap: 0; }
+
+    .contact-link {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 0; border-bottom: 1px solid var(--border);
+      text-decoration: none; color: var(--text);
+      font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      transition: color 0.2s, padding-left 0.2s;
+    }
+
+    .contact-link:hover { color: var(--accent); padding-left: 8px; }
+    .contact-link:first-child { border-top: 1px solid var(--border); }
+    .contact-link .arrow-r { font-size: 18px; }
+
+    /* FOOTER */
+    footer {
+      background: #050505; border-top: 1px solid var(--border);
+      padding: 2rem 3rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .footer-logo { font-family: var(--font-display); font-size: 1.5rem; color: var(--text); }
+    .footer-copy { font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
+    .footer-mark { font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
+    .footer-mark span { color: var(--accent); }
+
+    /* ANIMATIONS */
+    @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      #hero { padding: 0 1.5rem 4rem; }
+      section { padding: 5rem 1.5rem; }
+      .about-grid, .turbo-inner, .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-stats { display: none; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="cursor"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#" class="nav-logo">
+      <div class="ce-mark">CE</div>
+      CAPDE
+    </a>
+    <div class="nav-links">
+      <a href="#games">Games</a>
+      <a href="#about">About</a>
+      <a href="#turbostrap">TurboStrap</a>
+      <a href="#contact" class="nav-cta">Contact</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-eyebrow">Capde Entertainment — Est. 2024</div>
+    <h1 class="hero-title">
+      <span class="outline">WE</span><br>
+      <span class="filled">BUILD</span><br>
+      <span class="outline">WORLDS</span>
+    </h1>
+    <div class="hero-sub">
+      <p class="hero-desc">From Roblox to PC — we craft bold, immersive game experiences that push the limits of what's possible.</p>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num">3+</div>
+          <div class="stat-label">Games</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">2</div>
+          <div class="stat-label">Platforms</div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-hint">Scroll</div>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span>CHAOS CROWD</span><span class="ticker-dot">✦</span>
+      <span>WAY TO HEAVEN</span><span class="ticker-dot">✦</span>
+      <span>TURBOSTRAP</span><span class="ticker-dot">✦</span>
+      <span>CAPDE STUDIOS</span><span class="ticker-dot">✦</span>
+      <span>ROBLOX</span><span class="ticker-dot">✦</span>
+      <span>PC GAMING</span><span class="ticker-dot">✦</span>
+      <span>CHAOS CROWD</span><span class="ticker-dot">✦</span>
+      <span>WAY TO HEAVEN</span><span class="ticker-dot">✦</span>
+      <span>TURBOSTRAP</span><span class="ticker-dot">✦</span>
+      <span>CAPDE STUDIOS</span><span class="ticker-dot">✦</span>
+      <span>ROBLOX</span><span class="ticker-dot">✦</span>
+      <span>PC GAMING</span><span class="ticker-dot">✦</span>
+    </div>
+  </div>
+
+  <!-- GAMES -->
+  <section id="games">
+    <div class="section-header reveal">
+      <div class="section-title-group">
+        <span class="section-num">01</span>
+        <div>
+          <div class="section-tag">Our Portfolio</div>
+          <h2 class="section-title">GAMES</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="games-grid">
+
+      <!-- Chaos Crowd -->
+      <div class="game-card reveal">
+        <div class="game-thumb">
+          <div class="game-thumb-inner chaos">CHAOS</div>
+          <div class="game-overlay">
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+        <div class="game-info">
+          <div class="game-platform">Roblox</div>
+          <div class="game-name">Chaos Crowd</div>
+          <div class="game-desc">An intense multiplayer experience built for chaos. Battle it out in wild, unpredictable arenas where anything goes.</div>
+          <div class="game-footer">
+            <span class="game-status status-live">Live</span>
+            <a href="https://www.roblox.com/games/118171642481884/Chaos-Crowd" target="_blank" class="game-link">Play now</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Way to Heaven -->
+      <div class="game-card reveal">
+        <div class="game-thumb">
+          <div class="game-thumb-inner heaven">HEAVEN</div>
+          <div class="game-overlay">
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+        <div class="game-info">
+          <div class="game-platform">Roblox</div>
+          <div class="game-name">Way to Heaven</div>
+          <div class="game-desc">A journey unlike any other. Navigate challenging paths and surreal environments on your ascent to the top.</div>
+          <div class="game-footer">
+            <span class="game-status status-live">Live</span>
+            <a href="https://www.roblox.com/games/14813871417/Way-to-Heaven" target="_blank" class="game-link">Play now</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Death Ridge -->
+      <div class="game-card reveal">
+        <div class="game-thumb">
+          <div class="game-thumb-inner chaos" style="background: linear-gradient(135deg,#0a0a0a,#1a1a1a);">DEATH<br>RIDGE</div>
+          <div class="game-overlay">
+            <div class="play-btn" style="background:#555;">✕</div>
+          </div>
+        </div>
+        <div class="game-info">
+          <div class="game-platform">Roblox</div>
+          <div class="game-name">Death Ridge</div>
+          <div class="game-desc">A brutal survival experience set on treacherous terrain. It was legendary while it lasted.</div>
+          <div class="game-footer">
+            <span class="game-status status-banned">Unavailable</span>
+            <span style="font-family:var(--font-ui);font-size:12px;color:var(--muted);letter-spacing:0.05em;">R.I.P.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="game-card reveal">
+        <div class="game-thumb">
+          <div class="game-thumb-inner progress">????</div>
+          <div class="game-overlay" style="background:rgba(255,170,0,0.06);">
+            <div class="play-btn" style="background:#ffaa00;">⚙</div>
+          </div>
+        </div>
+        <div class="game-info">
+          <div class="game-platform">PC / Roblox</div>
+          <div class="game-name">??? Untitled</div>
+          <div class="game-desc">Something big is in the works. We're not ready to talk about it yet — but trust us, it's coming.</div>
+          <div class="game-footer">
+            <span class="game-status status-wip">In Progress</span>
+            <span style="font-family:var(--font-ui);font-size:12px;color:var(--muted);letter-spacing:0.05em;">Stay tuned</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="section-header reveal">
+      <div class="section-title-group">
+        <span class="section-num">02</span>
+        <div>
+          <div class="section-tag">Who We Are</div>
+          <h2 class="section-title">ABOUT</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-left reveal">
+        <div class="about-big">
+          BUILT<br>TO<br><span class="red">CREATE.</span>
+        </div>
+        <p class="about-body">
+          Capde is an independent game development studio making bold, immersive experiences across Roblox and PC. We don't follow trends — we set them. From chaotic multiplayer games to polished PC titles, every project we ship is made with passion and precision.
+        </p>
+        <div class="about-tags">
+          <span class="tag">Game Dev</span>
+          <span class="tag">Roblox</span>
+          <span class="tag">PC</span>
+          <span class="tag">Multiplayer</span>
+          <span class="tag">Indie Studio</span>
+          <span class="tag">Tools</span>
+        </div>
+      </div>
+      <div class="about-right reveal">
+        <div class="about-card">
+          <div class="about-card-num">3+</div>
+          <div class="about-card-label">Games shipped</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-num">2</div>
+          <div class="about-card-label">Platforms</div>
+        </div>
+        <div class="about-card" style="grid-column: span 2;">
+          <div class="about-card-num" style="font-size:2rem;">CAPDE</div>
+          <div class="about-card-label">CE — Capde Entertainment. Bold games, built different.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TURBOSTRAP -->
+  <section id="turbostrap">
+    <div class="section-header reveal">
+      <div class="section-title-group">
+        <span class="section-num">03</span>
+        <div>
+          <div class="section-tag">Our Tool</div>
+          <h2 class="section-title">TURBOSTRAP</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="turbo-inner">
+      <div class="turbo-visual reveal">
+        <span class="dim">// TurboStrap launcher</span><br>
+        <span class="acc">[INIT]</span> Loading optimizations...<br>
+        <span class="dim">→</span> FPS unlock: <span class="acc">enabled</span><br>
+        <span class="dim">→</span> Memory cleaner: <span class="acc">active</span><br>
+        <span class="dim">→</span> Latency boost: <span class="acc">on</span><br>
+        <span class="dim">→</span> Custom flags: <span class="blue">loaded</span><br>
+        <span class="dim">→</span> Roblox version: <span class="blue">latest</span><br>
+        <br>
+        <span class="acc">[READY]</span> Launch Roblox?<br>
+        <span class="dim">_</span>
+      </div>
+      <div class="turbo-content reveal">
+        <h2 class="turbo-title">ROBLOX.<br><span>OPTIMISED.</span></h2>
+        <p class="turbo-body">TurboStrap is a custom Roblox launcher built for performance. Think Bloxstrap — but faster, leaner, and purpose-built by Capde to squeeze every last frame out of your system.</p>
+        <div class="turbo-features">
+          <div class="feature-row">FPS unlocker built in</div>
+          <div class="feature-row">Custom launch flags</div>
+          <div class="feature-row">Memory optimisation</div>
+          <div class="feature-row">Faster load times</div>
+          <div class="feature-row">Lightweight & open</div>
+        </div>
+        <a href="#contact" class="turbo-btn">Get notified ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-header reveal">
+      <div class="section-title-group">
+        <span class="section-num">04</span>
+        <div>
+          <div class="section-tag">Get In Touch</div>
+          <h2 class="section-title">CONTACT</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-grid">
+      <div class="reveal">
+        <h2 class="contact-big">LET'S<br><em>TALK.</em></h2>
+        <p class="contact-body">Got a collab idea? Want to work with us? Just want to chat about games? Hit us up — we're always open.</p>
+      </div>
+      <div class="contact-links reveal">
+        <a href="https://www.roblox.com/users/2003910453/profile" target="_blank" class="contact-link">
+          Roblox Profile <span class="arrow-r">↗</span>
+        </a>
+        <a href="https://www.roblox.com/games/118171642481884/Chaos-Crowd" target="_blank" class="contact-link">
+          Chaos Crowd <span class="arrow-r">↗</span>
+        </a>
+        <a href="https://www.roblox.com/games/14813871417/Way-to-Heaven" target="_blank" class="contact-link">
+          Way to Heaven <span class="arrow-r">↗</span>
+        </a>
+        <a href="#" class="contact-link" style="color:var(--muted)">
+          Discord — Coming Soon <span class="arrow-r" style="color:var(--border)">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">CAPDE</div>
+    <div class="footer-copy">© 2024 Capde Entertainment. All rights reserved.</div>
+    <div class="footer-mark">Made by <span>Rajveer Singh Saini</span></div>
+  </footer>
+
+  <script>
+    // Cursor
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, button, .game-card').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+
+    // Scroll nav
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // Reveal on scroll
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(r => observer.observe(r));
+  </script>
+</body>
+</html>
